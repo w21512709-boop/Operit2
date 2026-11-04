@@ -46,6 +46,13 @@ test("C2C and group replies use exact encoded endpoints and independent monotoni
   assert.equal(sent[0].body.msg_id, "source");
 });
 
+test("channel replies use the official channel message endpoint", async () => {
+  const { api, calls } = fixture();
+  await api.sendChannel("channel/a", { content: "channel hello", msg_id: "source-channel" });
+  assert.equal(calls[1].url, "https://api.sgroup.qq.com/channels/channel%2Fa/messages");
+  assert.deepEqual(plain(calls[1].body), { content: "channel hello", msg_id: "source-channel" });
+});
+
 test("sandbox is an explicit environment selection", async () => {
   const { api, calls } = fixture(true);
   await api.send("group", "group", { content: "hello" });
