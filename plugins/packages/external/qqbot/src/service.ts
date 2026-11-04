@@ -194,7 +194,7 @@ class QQBotService {
       let delivered = 0;
       try {
         const request = { kind: "submit" as const, chatId, runtime: "main" as const, input: {
-          text: `${event.content}\n\n[QQ ${scene}; sender=${event.userOpenId}; message=${event.messageId}; guild=${event.guildId}; channel=${event.channelId}]\n${config.assistantInstruction}`,
+          text: `${event.content}\n\n${scene === "channel" ? `[QQ channel; sender=${event.userOpenId}; message=${event.messageId}; guild=${event.guildId}; channel=${event.channelId}]` : `[QQ ${scene}; sender=${event.userOpenId}; message=${event.messageId}]`}\n${config.assistantInstruction}`,
           attachments: files, replyToMessageTimestamp: null }, turn: { kind: "execute" as const }, notifyReply: false };
         for await (const output of waifuStream(request, this.config.waifuProfile)) {
           if (generation !== this.autoGeneration) return;
