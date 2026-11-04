@@ -1,0 +1,29 @@
+name: QQBot channel check
+
+on:
+  push:
+    branches:
+      - feature/qq-channel-support
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "plugins/packages/external/qqbot/**"
+      - ".github/workflows/qqbot-channel-check.yml"
+
+jobs:
+  qqbot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: corepack enable
+      - name: Install QQBot test toolchain
+        working-directory: plugins/packages/buildin/workflow
+        run: corepack pnpm install --frozen-lockfile
+      - name: TypeScript check
+        run: node plugins/packages/buildin/workflow/node_modules/typescript/bin/tsc --noEmit -p plugins/packages/external/qqbot/tsconfig.json
+      - name: QQBot tests
+        run: node --test plugins/packages/external/qqbot/tests/*.test.mjs
