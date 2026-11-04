@@ -91,6 +91,16 @@ export class QQOpenApi {
     return this.send(scene, target, { msg_type: 7, msg_id: messageId, payload: { media: { file_info: fileInfo } } });
   }
 
+  /** Sends one passive reply into a QQ channel text subchannel. */
+  async sendChannel(channelId: string, params: SendParams): Promise<JsonObject> {
+    nonblank(channelId, "QQ channel id");
+    const body: JsonObject = params.payload === undefined ? {} : { ...object(params.payload, "payload") };
+    if (params.content !== undefined) body.content = nonblank(params.content, "content");
+    if (params.msg_id !== undefined) body.msg_id = nonblank(params.msg_id, "msg_id");
+    if (body.content === undefined && body.embed === undefined && body.ark === undefined && body.image === undefined) throw new Error("QQ channel message requires content, embed, ark or image");
+    return this.request("POST", `/channels/${encodeURIComponent(channelId)}/messages`, body);
+  }
+
   /** Builds one authoritative message body and keeps reply sequences monotonic per source message. */
   async send(scene: "c2c" | "group", target: string, params: SendParams): Promise<JsonObject> {
     nonblank(target, "QQ target openid");
