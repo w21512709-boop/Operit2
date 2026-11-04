@@ -95,7 +95,7 @@ class QQBotService {
   /** Returns and optionally consumes only events matching explicit filters. */
   private receive(params: ReceiveParams): Response {
     const limit = params.limit === undefined ? 20 : integer(params.limit, "limit", 1, 100);
-    if (params.scene !== undefined && params.scene !== "c2c" && params.scene !== "group" && params.scene !== "unknown") throw new Error("Invalid scene");
+    if (params.scene !== undefined && params.scene !== "c2c" && params.scene !== "group" && params.scene !== "channel" && params.scene !== "unknown") throw new Error("Invalid scene");
     const selected = this.events.filter(event => (params.scene === undefined || params.scene === event.scene) && (params.event_type === undefined || params.event_type === event.eventType)).slice(0, limit);
     if (params.consume !== false) for (const event of selected) this.events.splice(this.events.indexOf(event), 1);
     const events = selected.map(event => {
@@ -162,7 +162,7 @@ class QQBotService {
         throw new Error(`QQ listener is ${this.gateway.status}: ${this.gateway.lastError}`);
       }
       const config = this.config.autoReply;
-      const index = this.events.findIndex(event => event.messageId !== "" && ((event.scene === "c2c" && config.c2cEnabled) || (event.scene === "group" && config.groupEnabled)));
+      const index = this.events.findIndex(event => event.messageId !== "" && ((event.scene === "c2c" && config.c2cEnabled) || ((event.scene === "group" || event.scene === "channel") && config.groupEnabled)));
       if (index === -1) return;
       const event = this.events.splice(index, 1)[0];
       const key = `${event.scene}:${event.messageId}`;
@@ -170,8 +170,8 @@ class QQBotService {
       this.config.processed = [...this.config.processed, key].slice(-512);
       await PluginConfig.flush(this.config);
       const scene = event.scene;
-      if (scene !== "c2c" && scene !== "group") throw new Error("Automatic replies require a C2C or group event");
-      const target = scene === "c2c" ? event.userOpenId : event.groupOpenId;
+      if (scene !== "c2c" && scene !== "group" && scene !== "channel") throw new Error("Automatic replies require a C2C, group or channel event");
+      const target = scene === "c2c" ? event.userOpenId : scene === "group" ? event.groupOpenId : event.channelId;
       const binding = `${scene}:${target}`;
       let chatId = this.config.bindings[binding];
       if (chatId === undefined) {
@@ -183,7 +183,7 @@ class QQBotService {
         await PluginConfig.flush(this.config);
       }
       if (generation !== this.autoGeneration) return;
-      const files = await attachments(event);
+      const files = scene === "channel" ? [] : await attachments(event);
       if (generation !== this.autoGeneration) return;
       this.activeChat = chatId;
       let timedOut = false;
@@ -194,15 +194,20 @@ class QQBotService {
       let delivered = 0;
       try {
         const request = { kind: "submit" as const, chatId, runtime: "main" as const, input: {
-          text: `${event.content}\n\n[QQ ${scene}; sender=${event.userOpenId}; message=${event.messageId}]\n${config.assistantInstruction}`,
+          text: `${event.content}\n\n[QQ ${scene}; sender=${event.userOpenId}; message=${event.messageId}; guild=${event.guildId}; channel=${event.channelId}]\n${config.assistantInstruction}`,
           attachments: files, replyToMessageTimestamp: null }, turn: { kind: "execute" as const }, notifyReply: false };
         for await (const output of waifuStream(request, this.config.waifuProfile)) {
           if (generation !== this.autoGeneration) return;
           if (timedOut) throw new Error("QQ automatic reply exceeded its AI deadline");
           if (output.type === "segment") {
-            if (output.segment.kind === "text") await this.api.send(scene, target, { content: output.segment.text, msg_id: event.messageId });
-            else await this.api.sendImage(scene, target, output.segment.source, event.messageId);
-            delivered++;
+            if (output.segment.kind === "text") {
+              if (scene === "channel") await this.api.sendChannel(target, { content: output.segment.text, msg_id: event.messageId });
+              else await this.api.send(scene, target, { content: output.segment.text, msg_id: event.messageId });
+              delivered++;
+            } else if (scene !== "channel") {
+              await this.api.sendImage(scene, target, output.segment.source, event.messageId);
+              delivered++;
+            }
           }
         }
       } catch (error) {
