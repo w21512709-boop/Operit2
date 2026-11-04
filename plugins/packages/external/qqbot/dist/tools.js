@@ -26,8 +26,8 @@ exports.qqbot_upload_image = qqbot_upload_image;
     "en": "QQ Bot"
   },
   "description": {
-    "zh": "QQ Bot 原生网络监听、C2C/群消息、事件队列和 AI 自动回复。openid 由接收事件获得，不是 QQ 号。",
-    "en": "Native QQ Bot Gateway, C2C/group messaging, events and AI replies. Use openids from inbound events."
+    "zh": "QQ Bot 原生网络监听、C2C/群/频道消息、事件队列和 AI 自动回复。openid 由接收事件获得，不是 QQ 号。",
+    "en": "Native QQ Bot Gateway, C2C/group/channel messaging, events and AI replies. Use openids from inbound events."
   },
   "category": "Communication",
   "tools": [
@@ -155,7 +155,7 @@ exports.qqbot_upload_image = qqbot_upload_image;
     {
       "name": "qqbot_receive_events",
       "description": {
-        "zh": "读取有界事件队列。consume 默认 true；scene 支持 c2c/group/unknown；include_raw 返回原始数据。",
+        "zh": "读取有界事件队列。consume 默认 true；scene 支持 c2c/group/channel/unknown；include_raw 返回原始数据。",
         "en": "Read queued events with consumption and scene/type filters."
       },
       "parameters": [
@@ -182,7 +182,7 @@ exports.qqbot_upload_image = qqbot_upload_image;
           "type": "string",
           "required": false,
           "description": {
-            "zh": "事件场景：c2c、group 或 unknown",
+            "zh": "事件场景：c2c、group、channel 或 unknown",
             "en": "scene"
           }
         },
@@ -370,7 +370,7 @@ exports.qqbot_upload_image = qqbot_upload_image;
     {
       "name": "qqbot_auto_reply_configure",
       "description": {
-        "zh": "配置 C2C/群 AI 回复、超时、会话分组、角色选择标识和额外指令。",
+        "zh": "配置 C2C/群/频道 AI 回复、超时、会话分组、角色选择标识和额外指令。",
         "en": "Configure AI replies, deadlines, chat grouping, character selection and instructions."
       },
       "parameters": [
@@ -397,7 +397,7 @@ exports.qqbot_upload_image = qqbot_upload_image;
           "type": "boolean",
           "required": false,
           "description": {
-            "zh": "是否处理群消息",
+            "zh": "是否处理群/频道消息",
             "en": "group_enabled"
           }
         },

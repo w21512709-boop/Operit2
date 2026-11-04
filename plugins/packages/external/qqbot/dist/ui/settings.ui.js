@@ -87,7 +87,7 @@ function settings(ctx) {
     /** Converts user-facing seconds once and validates all reply settings before saving. */
     function replies() {
         if (!c2c && !group)
-            throw new Error("请至少选择一种回复范围：私聊或群消息。");
+            throw new Error("请至少选择一种回复范围：私聊或群/频道消息。");
         const seconds = Number(deadline);
         if (deadline.trim() === "" || !Number.isFinite(seconds) || !/^\d+(?:\.\d{1,3})?$/.test(deadline.trim()) || seconds < 1 || seconds > 600)
             throw new Error("回复等待时间请填写 1～600 秒。");
@@ -185,10 +185,10 @@ function settings(ctx) {
     const replyFields = [
         ctx.UI.DropdownMenu({ key: "role", label: "回复角色", text: choices.find(role => role.selection === selection).name,
             enabled: busy === "" && status !== null, fillMaxWidth: true, onClick: index => setSelection(choices[index].selection) }, choices.map(role => ctx.UI.Text({ text: role.name, paddingVertical: 8 }))),
-        description("每个私聊和群聊都有独立会话。更换角色用于新会话，已有会话会保留原来的角色。"),
+        description("每个私聊、群聊和频道子频道都有独立会话。更换角色用于新会话，已有会话会保留原来的角色。"),
         ...(roleError ? [ctx.UI.Text({ text: roleError, color: colors.error }), button("reloadRoles", "重新读取角色", loadRoles)] : []),
         toggle("c2c", "回复私聊消息", c2c, setC2c),
-        toggle("group", "回复群消息", group, setGroup),
+        toggle("group", "回复群/频道消息", group, setGroup),
         button("advanced", advanced ? "收起高级设置" : "高级设置", () => setAdvanced(!advanced)),
     ];
     if (advanced)
@@ -238,7 +238,7 @@ function settings(ctx) {
                     setEvents(result.events);
                 return "";
             })),
-            ...(events === null ? [] : events.length === 0 ? [description("暂无待处理消息。自动回复已处理的消息可在聊天记录中查看。")] : events.map(event => description(`${event.scene === "c2c" ? "私聊" : event.scene === "group" ? "群消息" : event.eventType} · ${event.timestamp || event.receivedAt}\n${event.content || "[非文本消息]"}`))),
+            ...(events === null ? [] : events.length === 0 ? [description("暂无待处理消息。自动回复已处理的消息可在聊天记录中查看。")] : events.map(event => description(`${event.scene === "c2c" ? "私聊" : event.scene === "group" ? "群消息" : event.scene === "channel" ? "频道消息" : event.eventType} · ${event.timestamp || event.receivedAt}\n${event.content || "[非文本消息]"}`))),
             ...feedback("diagnostics"),
             button("clearEvents", "清空待处理事件", () => operate("diagnostics", "正在清空事件…", async () => {
                 const result = await (0, rpc_js_1.call)({ action: "clear" });

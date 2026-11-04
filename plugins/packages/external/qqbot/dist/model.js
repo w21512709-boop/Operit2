@@ -48,7 +48,7 @@ function inbound(payload) {
     const eventType = nonblank(payload.t, "dispatch.t");
     const body = object(payload.d, "dispatch.d");
     const seq = integer(payload.s, "dispatch.s", 0, Number.MAX_SAFE_INTEGER);
-    let scene = "unknown", userOpenId = "", groupOpenId = "", messageId = "", content = "", timestamp = "";
+    let scene = "unknown", userOpenId = "", groupOpenId = "", guildId = "", channelId = "", messageId = "", content = "", timestamp = "";
     if (eventType === "C2C_MESSAGE_CREATE" || eventType === "GROUP_AT_MESSAGE_CREATE" || eventType === "GROUP_MESSAGE_CREATE") {
         scene = eventType === "C2C_MESSAGE_CREATE" ? "c2c" : "group";
         const author = object(body.author, "message.author");
@@ -60,7 +60,18 @@ function inbound(payload) {
             content = text(body.content, "message.content");
         timestamp = text(body.timestamp, "message.timestamp");
     }
+    else if (eventType === "AT_MESSAGE_CREATE" || eventType === "MESSAGE_CREATE") {
+        scene = "channel";
+        const author = object(body.author, "message.author");
+        userOpenId = nonblank(author.id, "message.author id");
+        guildId = nonblank(body.guild_id, "message.guild_id");
+        channelId = nonblank(body.channel_id, "message.channel_id");
+        messageId = nonblank(body.id, "message.id");
+        if (body.content !== undefined)
+            content = text(body.content, "message.content");
+        timestamp = text(body.timestamp, "message.timestamp");
+    }
     const eventId = payload.id === undefined ? "" : text(payload.id, "dispatch.id");
-    return { scene, eventType, eventId, seq, messageId, content, timestamp, receivedAt: new Date().toISOString(), userOpenId, groupOpenId, rawPayload: payload,
+    return { scene, eventType, eventId, seq, messageId, content, timestamp, receivedAt: new Date().toISOString(), userOpenId, groupOpenId, guildId, channelId, rawPayload: payload,
         replyHint: { scene, msg_id: messageId, event_id: eventId, openid: userOpenId, group_openid: groupOpenId } };
 }

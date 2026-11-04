@@ -19,22 +19,28 @@ test("HELLO identifies with QQBot credentials and only READY marks the service h
   const { gateway, socket, time } = await fixture();
   assert.equal(gateway.status, "ready");
   assert.equal(gateway.sessionId, "session-1");
-  assert.deepEqual(plain(socket.sent[0].payload), { op: 2, d: { token: "QQBot access-token", intents: 1 << 25, shard: [0, 1], properties: { os: "operit", browser: "operit", device: "operit" } } });
+  assert.deepEqual(plain(socket.sent[0].payload), { op: 2, d: { token: "QQBot access-token", intents: (1 << 25) | (1 << 30), shard: [0, 1], properties: { os: "operit", browser: "operit", device: "operit" } } });
   await gateway.stop();
   assert.equal(time.pending(), 0);
   assert.equal(socket.closed.length, 1);
 });
 
-test("C2C and group dispatch retain the schema-specific sender, target and reply source", async () => {
+test("C2C, group and channel dispatch retain the schema-specific sender and target", async () => {
   const { gateway, socket, time, events } = await fixture();
   socket.frame(c2c());
   socket.frame({ op: 0, s: 3, t: "GROUP_AT_MESSAGE_CREATE", d: { id: "group-message", content: "hi", timestamp: "2026-10-24T00:00:00Z", group_openid: "group-1", author: { member_openid: "member-1" } } });
+  socket.frame({ op: 0, s: 4, t: "AT_MESSAGE_CREATE", d: { id: "channel-message", content: "hello channel", timestamp: "2026-10-24T00:00:01Z", guild_id: "guild-1", channel_id: "channel-1", author: { id: "user-channel-1" } } });
   await time.advance(100);
   assert.deepEqual(plain(events.map(event => event.replyHint)), [
     { scene: "c2c", msg_id: "message-1", event_id: "event-message-1", openid: "user-1", group_openid: "" },
     { scene: "group", msg_id: "group-message", event_id: "", openid: "member-1", group_openid: "group-1" },
+    { scene: "channel", msg_id: "channel-message", event_id: "", openid: "user-channel-1", group_openid: "" },
   ]);
-  assert.equal(gateway.receivedCount, 2);
+  assert.equal(events[2].scene, "channel");
+  assert.equal(events[2].guildId, "guild-1");
+  assert.equal(events[2].channelId, "channel-1");
+  assert.equal(events[2].userOpenId, "user-channel-1");
+  assert.equal(gateway.receivedCount, 3);
   await gateway.stop();
 });
 

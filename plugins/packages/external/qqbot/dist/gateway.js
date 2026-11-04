@@ -160,7 +160,7 @@ class QQGateway {
                 if (this.sessionId !== "")
                     await this.send({ op: 6, d: { token: `QQBot ${token}`, session_id: this.sessionId, seq: this.sequence } });
                 else
-                    await this.send({ op: 2, d: { token: `QQBot ${token}`, intents: (1 << 25), shard: [0, 1], properties: { os: "operit", browser: "operit", device: "operit" } } });
+                    await this.send({ op: 2, d: { token: `QQBot ${token}`, intents: (1 << 25) | (1 << 30), shard: [0, 1], properties: { os: "operit", browser: "operit", device: "operit" } } });
                 return;
             }
             case 0: {
