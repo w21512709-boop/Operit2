@@ -34,6 +34,7 @@ test("C2C, group and channel dispatch retain the schema-specific sender and targ
   assert.deepEqual(plain(events.map(event => event.replyHint)), [
     { scene: "c2c", msg_id: "message-1", event_id: "event-message-1", openid: "user-1", group_openid: "" },
     { scene: "group", msg_id: "group-message", event_id: "", openid: "member-1", group_openid: "group-1" },
+    { scene: "channel", msg_id: "channel-message", event_id: "", openid: "user-channel-1", group_openid: "" },
   ]);
   assert.equal(events[2].scene, "channel");
   assert.equal(events[2].guildId, "guild-1");
