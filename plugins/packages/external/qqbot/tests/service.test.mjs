@@ -117,6 +117,23 @@ test("automatic replies use independent durable chats and authoritative waifu sn
   await f.complete(f.service.receive({ action: "stop" }));
 });
 
+test("automatic replies handle QQ channel @ messages with a durable channel chat", async () => {
+  const f = fixture(); await f.complete(f.service.receive({ action: "start" }));
+  await f.complete(f.service.receive({ action: "auto_configure", params: { enabled: true, group_enabled: true, character_selection: "card:chosen" } }));
+  f.socket.frame({ op: 0, s: 2, t: "AT_MESSAGE_CREATE", d: {
+    id: "channel-source", content: "频道里叫你", timestamp: "2026-10-24T00:00:00Z",
+    guild_id: "guild-1", channel_id: "channel-1", author: { id: "channel-user-1" },
+  } });
+  await f.time.advance(1000);
+  assert.equal(f.created.length, 1);
+  assert.deepEqual(plain(f.config.bindings), { "channel:channel-1": "chat-1" });
+  const reply = f.http.find(request => request.url.includes("/channels/channel-1/messages"));
+  assert.ok(reply);
+  assert.equal(reply.body.content, "actual AI response");
+  assert.equal(reply.body.msg_id, "channel-source");
+  await f.complete(f.service.receive({ action: "stop" }));
+});
+
 test("stopping automatic replies cancels the active Chat and suppresses late QQ sends", async () => {
   const f = fixture({ deferReply: true }); await f.complete(f.service.receive({ action: "start" }));
   await f.complete(f.service.receive({ action: "auto_configure", params: { enabled: true } }));
